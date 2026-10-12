@@ -12,9 +12,7 @@ Portal, das Tiere aus vielen Tierheimen und Organisationen zusammenführt.
 ```bash
 docker compose up -d                       # PostgreSQL + PostGIS
 
-cd portal
-dotnet new sln -n TierschutzCollect
-dotnet sln add src/Portal.Domain src/Portal.Infrastructure src/Portal.Web
+cd portal                                  # hier liegt TierschutzCollect.slnx (in Visual Studio öffnen)
 
 dotnet tool install --global dotnet-ef     # einmalig
 dotnet ef migrations add Initial -p src/Portal.Infrastructure -s src/Portal.Web
@@ -23,12 +21,11 @@ dotnet run --project src/Portal.Web
 ```
 Beim ersten Start im Development-Modus wird die Datenbank migriert und eine
 Demo-Organisation angelegt. Der API-Key steht **einmalig** im Konsolen-Log.
-Danach `docs/beispiel-import.http` ausführen.
+Danach `docs/beispiel-import.http` ausführen (Web läuft auf http://localhost:5080).
 
 ## Tests
 ```bash
 cd portal
-dotnet sln add tests/Portal.Tests
 dotnet test
 ```
 Die Tests laufen gegen eine SQLite-In-Memory-Datenbank (kein Docker nötig).

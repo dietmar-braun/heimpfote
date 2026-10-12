@@ -1,8 +1,8 @@
 ### Health
-GET http://localhost:5000/health
+GET http://localhost:5080/health
 
 ### Import (adjust the port if needed, insert the API key from the startup log)
-POST http://localhost:5000/api/import/animals
+POST http://localhost:5080/api/import/animals
 Content-Type: application/json
 X-Api-Key: tsc_HIER_DEN_KEY_EINTRAGEN
 
