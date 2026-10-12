@@ -1,9 +1,19 @@
 @page "/tiere"
 @inject AnimalSearchService Search
+@inject NavigationManager Nav
+@inject IConfiguration Config
 
 <PageTitle>@Title</PageTitle>
 <HeadContent>
     <meta name="description" content="Vermittelbare Tiere aus Tierheimen und Tierschutzorganisationen durchsuchen und filtern." />
+    @if (SearchQuery.HasFiltersBeyondSpecies(Criteria))
+    {
+        <meta name="robots" content="noindex,follow" />
+    }
+    else
+    {
+        <link rel="canonical" href="@Canonical" />
+    }
 </HeadContent>
 
 <h1>Tiere suchen</h1>
@@ -165,4 +175,9 @@ else
     }
 
     private string PageUrl(int page) => "/tiere" + SearchQuery.ToQueryString(Criteria, page);
+
+    // Canonical URL for indexable pages (list or species page, optionally with page number)
+    private string Canonical => SiteUrls.Combine(
+        SiteUrls.Base(Config["Site:BaseUrl"], Nav.BaseUri),
+        "tiere" + SearchQuery.ToQueryString(Criteria, Result.Page));
 }

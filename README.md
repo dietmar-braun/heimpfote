@@ -59,3 +59,8 @@ Voraussetzung: Standardnamespace von `Portal.Web` ist `TierschutzCollect.Web`.
 - Der Freitext nutzt auf PostgreSQL die deutsche Volltextsuche (GIN-Index) plus Teilwort-Treffer bei Name und Rasse. In den Tests (SQLite) läuft eine einfache Teilstring-Suche.
 - Alle Filter stehen in der URL und lassen sich teilen, zum Beispiel `/tiere?art=Hund&groesse=gross&kinder=1`.
 - Neue Migration nötig (Volltextindex): `dotnet ef migrations add AddFullTextSearch -p src/Portal.Infrastructure -s src/Portal.Web` (bei einer frischen Datenbank reicht `Initial`).
+
+## SEO
+- `/sitemap.xml` (alle vermittelbaren Tiere) und `/robots.txt` (sperrt `/admin`, `/login`, `/api`) werden automatisch erzeugt.
+- Für Produktion `Site:BaseUrl` setzen (zum Beispiel `https://beispiel.de`, per Umgebungsvariable `Site__BaseUrl`). Ohne Angabe wird die Adresse der aktuellen Anfrage verwendet.
+- Detailseiten und Listen ohne Zusatzfilter haben einen Canonical-Link. Gefilterte Ergebnisseiten sind `noindex,follow`, ebenso Tiere, die nicht mehr vermittelbar sind.

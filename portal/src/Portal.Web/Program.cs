@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -134,6 +135,28 @@ app.MapPost("/admin/tiere/{id:guid}/status", async (
 
     return Results.LocalRedirect(LocalUrls.SafePath(returnUrl) ?? "/admin/tiere");
 }).RequireAuthorization("Admin");
+
+// ---- SEO: robots.txt and sitemap.xml ----
+app.MapGet("/robots.txt", (HttpContext http, IConfiguration config) =>
+{
+    var baseUrl = SiteUrls.Base(config["Site:BaseUrl"], $"{http.Request.Scheme}://{http.Request.Host}");
+    return Results.Text(RobotsTxt.Build(baseUrl), "text/plain", Encoding.UTF8);
+});
+
+app.MapGet("/sitemap.xml", async (HttpContext http, IConfiguration config, AppDbContext db, CancellationToken ct) =>
+{
+    var baseUrl = SiteUrls.Base(config["Site:BaseUrl"], $"{http.Request.Scheme}://{http.Request.Host}");
+
+    var rows = await db.Animals.AsNoTracking()
+        .Where(a => a.Status == AnimalStatus.Vermittelbar)
+        .OrderBy(a => a.Id)
+        .Take(SitemapBuilder.MaxUrls)
+        .Select(a => new { a.Slug, a.UpdatedAt })
+        .ToListAsync(ct);
+
+    var xml = SitemapBuilder.Build(baseUrl, rows.Select(r => (r.Slug, r.UpdatedAt)));
+    return Results.Content(xml, "application/xml", Encoding.UTF8);
+});
 
 app.MapRazorComponents<App>();
 

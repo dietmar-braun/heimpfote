@@ -1,5 +1,7 @@
 @page "/tiere/{Slug}"
 @inject AppDbContext Db
+@inject NavigationManager Nav
+@inject IConfiguration Config
 
 @if (animal is null)
 {
@@ -13,6 +15,12 @@ else
     <HeadContent>
         <meta name="description" content="@AnimalDisplay.Truncate(animal.Description, 150)" />
         <meta property="og:title" content="@animal.Name – @animal.Species" />
+        <link rel="canonical" href="@Canonical" />
+        <meta property="og:url" content="@Canonical" />
+        @if (animal.Status != AnimalStatus.Vermittelbar)
+        {
+            <meta name="robots" content="noindex" />
+        }
         <meta property="og:description" content="@AnimalDisplay.Truncate(animal.Description, 150)" />
         @if (animal.Images.Count > 0)
         {
@@ -110,6 +118,10 @@ else
     [CascadingParameter] private HttpContext? Http { get; set; }
 
     private Animal? animal;
+
+    private string Canonical => SiteUrls.Combine(
+        SiteUrls.Base(Config["Site:BaseUrl"], Nav.BaseUri),
+        $"tiere/{animal!.Slug}");
 
     protected override async Task OnInitializedAsync()
     {
