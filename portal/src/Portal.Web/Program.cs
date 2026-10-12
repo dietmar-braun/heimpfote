@@ -6,6 +6,7 @@ using TierschutzCollect.Domain.Entities;
 using TierschutzCollect.Domain.Enums;
 using TierschutzCollect.Infrastructure;
 using TierschutzCollect.Infrastructure.Import;
+using TierschutzCollect.Infrastructure.Search;
 using TierschutzCollect.Infrastructure.Services;
 using TierschutzCollect.Web;
 using TierschutzCollect.Web.Components;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
         npgsql => npgsql.MigrationsAssembly("Portal.Infrastructure")));
 
 builder.Services.AddScoped<ImportService>();
+builder.Services.AddScoped<AnimalSearchService>();
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();

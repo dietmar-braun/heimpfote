@@ -53,3 +53,9 @@ Voraussetzung: Standardnamespace von `Portal.Web` ist `TierschutzCollect.Web`.
 - Das Datenmodell enthält jetzt die Identity-Tabellen. Neue Migration nötig:
   `dotnet ef migrations add AddIdentity -p src/Portal.Infrastructure -s src/Portal.Web`
   (bei einer ganz frischen Datenbank reicht `Initial`).
+
+## Suche
+- `/tiere` filtert nach Tierart, Geschlecht, Größe, Altersgruppe, Kastriert, Verträglichkeit (Kinder, Hunde, Katzen, Wohnung), Dringend und Freitext. Sortierung: empfohlen, neueste, Name.
+- Der Freitext nutzt auf PostgreSQL die deutsche Volltextsuche (GIN-Index) plus Teilwort-Treffer bei Name und Rasse. In den Tests (SQLite) läuft eine einfache Teilstring-Suche.
+- Alle Filter stehen in der URL und lassen sich teilen, zum Beispiel `/tiere?art=Hund&groesse=gross&kinder=1`.
+- Neue Migration nötig (Volltextindex): `dotnet ef migrations add AddFullTextSearch -p src/Portal.Infrastructure -s src/Portal.Web` (bei einer frischen Datenbank reicht `Initial`).

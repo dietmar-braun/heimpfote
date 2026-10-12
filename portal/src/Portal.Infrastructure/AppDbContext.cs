@@ -53,6 +53,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasIndex(x => x.Slug).IsUnique();
             e.HasIndex(x => new { x.Status, x.Species });
 
+            if (Database.IsNpgsql())
+            {
+                // Full-text search index (PostgreSQL only; the SQLite test database has no tsvector support).
+                // Queries must use the same expression: to_tsvector('german', name || ' ' || description).
+                e.HasIndex(x => new { x.Name, x.Description })
+                    .HasMethod("GIN")
+                    .IsTsVectorExpressionIndex("german");
+            }
+
             e.HasOne(x => x.Organization).WithMany(o => o.Animals)
                 .HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Breed).WithMany()
