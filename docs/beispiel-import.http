@@ -1,0 +1,38 @@
+### Health
+GET http://localhost:5000/health
+
+### Import (adjust the port if needed, insert the API key from the startup log)
+POST http://localhost:5000/api/import/animals
+Content-Type: application/json
+X-Api-Key: tsc_HIER_DEN_KEY_EINTRAGEN
+
+{
+  "source": "Crawler",
+  "isFullSnapshot": true,
+  "animals": [
+    {
+      "externalId": "tier-1001",
+      "name": "Bello",
+      "species": "Hund",
+      "breedName": "Labrador",
+      "sex": "Maennlich",
+      "approxAgeMonths": 36,
+      "size": "Gross",
+      "isNeutered": true,
+      "goodWithChildren": "Ja",
+      "goodWithCats": "Unbekannt",
+      "description": "Freundlicher Rüde sucht aktive Familie.",
+      "sourceUrl": "https://beispiel-tierheim.de/tiere/bello",
+      "imageUrls": ["https://beispiel-tierheim.de/bilder/bello1.jpg"]
+    },
+    {
+      "externalId": "tier-1002",
+      "name": "Luna",
+      "species": "Katze",
+      "sex": "Weiblich",
+      "approxAgeMonths": 12,
+      "size": "Klein",
+      "isUrgent": true
+    }
+  ]
+}
