@@ -1,0 +1,78 @@
+# ===== Visual Studio / .NET =====
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.log
+*.nupkg
+.nuget/
+packages/
+*.rsuo
+*.DotSettings.user
+BenchmarkDotNet.Artifacts/
+
+# Test coverage
+coverage/
+*.coverage
+*.coveragexml
+coverage.cobertura.xml
+
+# ===== JetBrains Rider =====
+.idea/
+*.sln.iml
+
+# ===== Secrets (never commit!) =====
+.env
+.env.*
+!.env.example
+*.pfx
+*.pem
+*.key
+secrets.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# ===== Python (Crawler) =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.ipynb_checkpoints/
+# Crawler raw data and intermediate results
+crawler/data/
+crawler/output/
+crawler/.scrapy/
+*.sqlite3
+
+# ===== Node / plugin build (WordPress, widget) =====
+node_modules/
+dist/
+.npm/
+# PHP / Composer (WordPress plugin)
+vendor/
+composer.phar
+# Plugin build artifacts
+plugins/**/build/
+*.zip
+
+# ===== Docker =====
+docker-compose.override.yml
+pgdata/
+
+# ===== Operating system / editor =====
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
