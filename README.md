@@ -24,3 +24,14 @@ dotnet run --project src/Portal.Web
 Beim ersten Start im Development-Modus wird die Datenbank migriert und eine
 Demo-Organisation angelegt. Der API-Key steht **einmalig** im Konsolen-Log.
 Danach `docs/beispiel-import.http` ausführen.
+
+## Tests
+```bash
+cd portal
+dotnet sln add tests/Portal.Tests
+dotnet test
+```
+Die Tests laufen gegen eine SQLite-In-Memory-Datenbank (kein Docker nötig).
+Abgedeckt sind: API-Keys, Slugs, Import-Validierung, Import-Logik (anlegen, aktualisieren,
+archivieren, Reaktivieren, Bilder, Rassen), Datenbankmodell (Indizes, Cascade, Enum-Mapping)
+und der API-Key-Filter.
