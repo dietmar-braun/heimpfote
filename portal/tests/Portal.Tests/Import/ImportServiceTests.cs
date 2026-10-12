@@ -172,6 +172,48 @@ public class ImportServiceTests : IDisposable
         Assert.Equal("https://x.de/neu.jpg", image.Url);
     }
 
+    [Fact]
+    public async Task ChangedDescription_WithUnchangedImages_KeepsTheImages()
+    {
+        var org = await _db.AddOrganizationAsync();
+        var images = new List<string> { "https://x.de/1.jpg", "https://x.de/2.jpg" };
+        await RunAsync(org, Req(DataSource.Crawler, false, Dto("1", description: "alt", images: images)));
+
+        var result = await RunAsync(org, Req(DataSource.Crawler, false, Dto("1", description: "neu", images: images)));
+
+        Assert.Equal(1, result.Updated);
+        await using var ctx = _db.NewContext();
+        var stored = await ctx.AnimalImages.OrderBy(i => i.SortOrder).ToListAsync();
+        Assert.Equal(images, stored.Select(i => i.Url).ToList());
+        Assert.True(stored[0].IsPrimary);
+    }
+
+    [Fact]
+    public async Task ImagesAddedToAnExistingAnimal_AreInserted()
+    {
+        var org = await _db.AddOrganizationAsync();
+        await RunAsync(org, Req(DataSource.Crawler, false, Dto("1")));
+
+        await RunAsync(org, Req(DataSource.Crawler, false, Dto("1", images: ["https://x.de/neu.jpg"])));
+
+        await using var ctx = _db.NewContext();
+        var image = await ctx.AnimalImages.SingleAsync();
+        Assert.Equal("https://x.de/neu.jpg", image.Url);
+        Assert.True(image.IsPrimary);
+    }
+
+    [Fact]
+    public async Task RemovedImages_AreDeleted()
+    {
+        var org = await _db.AddOrganizationAsync();
+        await RunAsync(org, Req(DataSource.Crawler, false, Dto("1", images: ["https://x.de/1.jpg"])));
+
+        await RunAsync(org, Req(DataSource.Crawler, false, Dto("1", images: [])));
+
+        await using var ctx = _db.NewContext();
+        Assert.Equal(0, await ctx.AnimalImages.CountAsync());
+    }
+
     // ---------- Breeds ----------
 
     [Fact]

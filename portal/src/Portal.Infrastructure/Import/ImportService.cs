@@ -122,7 +122,13 @@ public class ImportService(AppDbContext db)
         var order = 0;
         foreach (var url in d.ImageUrls ?? [])
         {
-            a.Images.Add(new AnimalImage { Url = url, SortOrder = order, IsPrimary = order == 0 });
+            var image = new AnimalImage { AnimalId = a.Id, Url = url, SortOrder = order, IsPrimary = order == 0 };
+            a.Images.Add(image);
+
+            // Add explicitly: AnimalImage has a client-generated Guid key. Without this, EF Core treats an image that is
+            // only discovered through the collection of an already tracked animal as existing and issues an UPDATE
+            // (0 rows affected) instead of an INSERT.
+            db.AnimalImages.Add(image);
             order++;
         }
     }
