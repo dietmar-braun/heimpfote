@@ -1,0 +1,39 @@
+@page "/admin"
+@attribute [Authorize(Policy = "Admin")]
+@inject AppDbContext Db
+
+<PageTitle>Verwaltung – Tierschutz Collect</PageTitle>
+<AdminNav />
+
+<h1>Übersicht</h1>
+
+<div class="stats">
+    <div class="stat"><strong>@orgCount</strong><span>Organisationen</span></div>
+    <div class="stat"><strong>@Count(AnimalStatus.Vermittelbar)</strong><span>Vermittelbar</span></div>
+    <div class="stat"><strong>@Count(AnimalStatus.Reserviert)</strong><span>Reserviert</span></div>
+    <div class="stat"><strong>@Count(AnimalStatus.Vermittelt)</strong><span>Vermittelt</span></div>
+    <div class="stat"><strong>@Count(AnimalStatus.Archiviert)</strong><span>Archiviert</span></div>
+</div>
+
+<p>
+    <a class="button" href="/admin/organisationen/neu">Organisation anlegen</a>
+</p>
+
+@code {
+    private int orgCount;
+    private Dictionary<AnimalStatus, int> counts = new();
+
+    private int Count(AnimalStatus status) => counts.GetValueOrDefault(status);
+
+    protected override async Task OnInitializedAsync()
+    {
+        orgCount = await Db.Organizations.CountAsync();
+
+        var grouped = await Db.Animals
+            .GroupBy(a => a.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        counts = grouped.ToDictionary(x => x.Status, x => x.Count);
+    }
+}

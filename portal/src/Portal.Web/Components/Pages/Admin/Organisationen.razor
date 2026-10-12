@@ -1,0 +1,52 @@
+@page "/admin/organisationen"
+@attribute [Authorize(Policy = "Admin")]
+@inject AppDbContext Db
+
+<PageTitle>Organisationen – Verwaltung</PageTitle>
+<AdminNav />
+
+<h1>Organisationen</h1>
+<p><a class="button" href="/admin/organisationen/neu">Organisation anlegen</a></p>
+
+@if (items.Count == 0)
+{
+    <p>Noch keine Organisationen vorhanden.</p>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Ort</th><th>Art</th><th>Tiere</th><th>API-Key</th><th>CMS</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var o in items)
+                {
+                    <tr>
+                        <td>@o.Name</td>
+                        <td>@o.City</td>
+                        <td>@o.Type</td>
+                        <td>@o.AnimalCount</td>
+                        <td>@(o.HasKey ? "Ja" : "Nein")</td>
+                        <td>@(o.DetectedCms ?? "–")</td>
+                        <td><a href="/admin/organisationen/@o.Id">Bearbeiten</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private sealed record Item(Guid Id, string Name, string? City, OrganizationType Type, int AnimalCount, bool HasKey, string? DetectedCms);
+
+    private List<Item> items = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = await Db.Organizations.AsNoTracking()
+            .OrderBy(o => o.Name)
+            .Select(o => new Item(o.Id, o.Name, o.City, o.Type, o.Animals.Count, o.ApiKeyHash != null, o.DetectedCms))
+            .ToListAsync();
+    }
+}

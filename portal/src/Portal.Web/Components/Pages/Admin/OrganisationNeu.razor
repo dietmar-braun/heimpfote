@@ -1,0 +1,44 @@
+@page "/admin/organisationen/neu"
+@attribute [Authorize(Policy = "Admin")]
+@inject AppDbContext Db
+@inject NavigationManager Nav
+
+<PageTitle>Organisation anlegen – Verwaltung</PageTitle>
+<AdminNav />
+
+<h1>Neue Organisation</h1>
+
+<EditForm Model="Model" method="post" OnValidSubmit="Save" FormName="org-neu" class="form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <OrganisationFields Model="Model" />
+    <button type="submit">Anlegen</button>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm] private OrganisationFormModel Model { get; set; } = new();
+
+    private async Task Save()
+    {
+        var org = new Organization { Name = Model.Name.Trim(), Slug = await UniqueSlugAsync(Model.Name) };
+        Model.ApplyTo(org);
+
+        Db.Organizations.Add(org);
+        await Db.SaveChangesAsync();
+
+        // Redirect to the detail page, where the API key can be generated
+        Nav.NavigateTo($"/admin/organisationen/{org.Id}");
+    }
+
+    private async Task<string> UniqueSlugAsync(string name)
+    {
+        var baseSlug = Slugger.Slugify(name);
+        if (baseSlug.Length == 0) baseSlug = "organisation";
+
+        var slug = baseSlug;
+        while (await Db.Organizations.AnyAsync(o => o.Slug == slug))
+            slug = $"{baseSlug}-{Guid.NewGuid().ToString("N")[..4]}";
+
+        return slug;
+    }
+}

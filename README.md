@@ -41,3 +41,15 @@ Seiten in `portal/src/Portal.Web/Components/Pages`:
 
 Im Development-Modus legt die App beim ersten Start sechs Demo-Tiere an.
 Voraussetzung: Standardnamespace von `Portal.Web` ist `TierschutzCollect.Web`.
+
+## Login und Verwaltung (Schritt 4)
+- `/login` Anmeldung (ASP.NET Core Identity, Cookie), `/admin` Verwaltung (nur Rolle `Admin`)
+- `/admin/organisationen` anlegen, bearbeiten, **API-Key erzeugen** (Klartext nur einmal sichtbar)
+- `/admin/tiere` Tiere filtern und den Status manuell ändern
+- Im Development-Modus wird ein Admin aus `appsettings.Development.json` angelegt
+  (`admin@localhost.test` / `Admin!12345`). **Nur lokal!**
+- Produktion: `Admin__Email` und `Admin__Password` als Umgebungsvariablen oder User-Secrets setzen,
+  nie im Repository. Ein vorhandener Benutzer wird nicht überschrieben.
+- Das Datenmodell enthält jetzt die Identity-Tabellen. Neue Migration nötig:
+  `dotnet ef migrations add AddIdentity -p src/Portal.Infrastructure -s src/Portal.Web`
+  (bei einer ganz frischen Datenbank reicht `Initial`).

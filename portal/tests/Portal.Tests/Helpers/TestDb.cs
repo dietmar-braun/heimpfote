@@ -26,6 +26,9 @@ public sealed class TestDb : IDisposable
         ctx.Database.EnsureCreated();
     }
 
+    /// <summary>The open SQLite connection (for tests that build their own service provider).</summary>
+    public SqliteConnection Connection => _connection;
+
     public AppDbContext NewContext() => new(_options);
 
     public async Task<Organization> AddOrganizationAsync(string name = "Test Tierheim", string? apiKey = null)

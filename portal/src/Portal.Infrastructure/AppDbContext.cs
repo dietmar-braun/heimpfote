@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TierschutzCollect.Domain.Entities;
 
 namespace TierschutzCollect.Infrastructure;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Animal> Animals => Set<Animal>();
@@ -18,6 +19,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        base.OnModelCreating(b); // Identity tables
+
         b.Entity<Organization>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(200);

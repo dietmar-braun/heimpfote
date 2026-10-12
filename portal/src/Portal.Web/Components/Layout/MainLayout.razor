@@ -3,8 +3,23 @@
 <header class="site-header">
     <div class="container header-inner">
         <a class="brand" href="/">🐾 Tierschutz Collect</a>
-        <nav>
+        <nav class="topnav">
             <a href="/tiere">Tiere</a>
+            <AuthorizeView>
+                <Authorized>
+                    <AuthorizeView Policy="Admin" Context="adminContext">
+                        <a href="/admin">Verwaltung</a>
+                    </AuthorizeView>
+                    <form method="post" action="/abmelden" class="inline">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="returnUrl" value="/" />
+                        <button type="submit" class="link">Abmelden</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login">Anmelden</a>
+                </NotAuthorized>
+            </AuthorizeView>
         </nav>
     </div>
 </header>

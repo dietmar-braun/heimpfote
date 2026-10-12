@@ -1,0 +1,143 @@
+@page "/admin/tiere"
+@attribute [Authorize(Policy = "Admin")]
+@inject AppDbContext Db
+@inject NavigationManager Nav
+
+<PageTitle>Tiere – Verwaltung</PageTitle>
+<AdminNav />
+
+<h1>Tiere verwalten</h1>
+
+<form method="get" class="filters">
+    <label>
+        Status
+        <select name="status">
+            <option value="">Alle</option>
+            @foreach (var s in Enum.GetValues<AnimalStatus>())
+            {
+                <option value="@s" selected="@(StatusFilter == s.ToString())">@s</option>
+            }
+        </select>
+    </label>
+    <label>
+        Organisation
+        <select name="org">
+            <option value="">Alle</option>
+            @foreach (var o in orgs)
+            {
+                <option value="@o.Id" selected="@(OrgId == o.Id)">@o.Name</option>
+            }
+        </select>
+    </label>
+    <button type="submit">Filtern</button>
+</form>
+
+<p class="count">@Total @(Total == 1 ? "Tier" : "Tiere")</p>
+
+@if (items.Count > 0)
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Art</th><th>Organisation</th><th>Quelle</th><th>Zuletzt gesehen</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var a in items)
+                {
+                    <tr>
+                        <td><a href="/tiere/@a.Slug">@a.Name</a></td>
+                        <td>@a.Species</td>
+                        <td>@a.OrganizationName</td>
+                        <td>@a.Source</td>
+                        <td>@a.LastSeenAt.ToString("dd.MM.yyyy HH:mm") UTC</td>
+                        <td>
+                            <form method="post" action="/admin/tiere/@a.Id/status" class="inline">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <select name="status">
+                                    @foreach (var s in Enum.GetValues<AnimalStatus>())
+                                    {
+                                        <option value="@s" selected="@(s == a.Status)">@s</option>
+                                    }
+                                </select>
+                                <button type="submit" class="small">Setzen</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (PageCount > 1)
+    {
+        <nav class="paging" aria-label="Seiten">
+            @if (Seite > 1)
+            {
+                <a href="@PageUrl(Seite - 1)">← Zurück</a>
+            }
+            <span>Seite @Seite von @PageCount</span>
+            @if (Seite < PageCount)
+            {
+                <a href="@PageUrl(Seite + 1)">Weiter →</a>
+            }
+        </nav>
+    }
+}
+
+@code {
+    private const int PageSize = 25;
+
+    [SupplyParameterFromQuery(Name = "status")] private string? StatusFilter { get; set; }
+    [SupplyParameterFromQuery(Name = "org")] private Guid? OrgId { get; set; }
+    [SupplyParameterFromQuery(Name = "seite")] private int Seite { get; set; } = 1;
+
+    private sealed record Item(Guid Id, string Slug, string Name, Species Species, string OrganizationName,
+        DataSource Source, DateTime LastSeenAt, AnimalStatus Status);
+
+    private sealed record OrgItem(Guid Id, string Name);
+
+    private List<Item> items = [];
+    private List<OrgItem> orgs = [];
+    private int Total;
+    private int PageCount = 1;
+    private string returnUrl = "/admin/tiere";
+
+    protected override async Task OnInitializedAsync()
+    {
+        returnUrl = new Uri(Nav.Uri).PathAndQuery;
+
+        orgs = await Db.Organizations.AsNoTracking()
+            .OrderBy(o => o.Name)
+            .Select(o => new OrgItem(o.Id, o.Name))
+            .ToListAsync();
+
+        AnimalStatus? status = Enum.TryParse<AnimalStatus>(StatusFilter, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : null;
+        StatusFilter = status?.ToString();
+
+        var query = Db.Animals.AsNoTracking().AsQueryable();
+        if (status is { } st) query = query.Where(a => a.Status == st);
+        if (OrgId is { } orgId) query = query.Where(a => a.OrganizationId == orgId);
+
+        Total = await query.CountAsync();
+        PageCount = Math.Max(1, (int)Math.Ceiling(Total / (double)PageSize));
+        Seite = Math.Clamp(Seite, 1, PageCount);
+
+        items = await query
+            .OrderBy(a => a.Organization.Name)
+            .ThenBy(a => a.Name)
+            .Skip((Seite - 1) * PageSize)
+            .Take(PageSize)
+            .Select(a => new Item(a.Id, a.Slug, a.Name, a.Species, a.Organization.Name, a.Source, a.LastSeenAt, a.Status))
+            .ToListAsync();
+    }
+
+    private string PageUrl(int page)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(StatusFilter)) parts.Add($"status={Uri.EscapeDataString(StatusFilter)}");
+        if (OrgId is { } id) parts.Add($"org={id}");
+        if (page > 1) parts.Add($"seite={page}");
+        return "/admin/tiere" + (parts.Count > 0 ? "?" + string.Join("&", parts) : "");
+    }
+}

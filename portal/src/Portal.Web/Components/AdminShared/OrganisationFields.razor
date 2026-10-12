@@ -1,0 +1,52 @@
+<label>
+    Name *
+    <InputText @bind-Value="Model.Name" />
+</label>
+<ValidationMessage For="() => Model.Name" />
+
+<label>
+    Art
+    <InputSelect @bind-Value="Model.Type">
+        @foreach (var t in Enum.GetValues<OrganizationType>())
+        {
+            <option value="@t">@t</option>
+        }
+    </InputSelect>
+</label>
+
+<label>
+    Website
+    <InputText @bind-Value="Model.WebsiteUrl" placeholder="https://…" />
+</label>
+<ValidationMessage For="() => Model.WebsiteUrl" />
+
+<label>
+    E-Mail
+    <InputText @bind-Value="Model.Email" />
+</label>
+<ValidationMessage For="() => Model.Email" />
+
+<label>
+    Telefon
+    <InputText @bind-Value="Model.Phone" />
+</label>
+
+<label>
+    Straße
+    <InputText @bind-Value="Model.Street" />
+</label>
+
+<div class="row">
+    <label>
+        PLZ
+        <InputText @bind-Value="Model.PostalCode" />
+    </label>
+    <label>
+        Stadt
+        <InputText @bind-Value="Model.City" />
+    </label>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public OrganisationFormModel Model { get; set; } = default!;
+}

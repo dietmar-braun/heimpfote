@@ -1,0 +1,63 @@
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Nav
+
+<PageTitle>Anmelden – Tierschutz Collect</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex" />
+</HeadContent>
+
+<h1>Anmelden</h1>
+
+@if (error is not null)
+{
+    <p class="notice">@error</p>
+}
+
+<EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" class="form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <label>
+        E-Mail
+        <InputText type="email" @bind-Value="Input.Email" autocomplete="username" />
+    </label>
+    <label>
+        Passwort
+        <InputText type="password" @bind-Value="Input.Password" autocomplete="current-password" />
+    </label>
+    <button type="submit">Anmelden</button>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm] private LoginModel Input { get; set; } = new();
+    [SupplyParameterFromQuery(Name = "ReturnUrl")] private string? ReturnUrl { get; set; }
+
+    private string? error;
+
+    private async Task LoginUser()
+    {
+        var result = await SignInManager.PasswordSignInAsync(
+            Input.Email, Input.Password, isPersistent: false, lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            Nav.NavigateTo(LocalUrls.SafePath(ReturnUrl) ?? "/admin");
+            return;
+        }
+
+        error = result.IsLockedOut
+            ? "Zu viele Fehlversuche. Das Konto ist vorübergehend gesperrt."
+            : "E-Mail oder Passwort ist falsch.";
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessage = "Bitte E-Mail eingeben.")]
+        [EmailAddress(ErrorMessage = "Ungültige E-Mail-Adresse.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Bitte Passwort eingeben.")]
+        public string Password { get; set; } = "";
+    }
+}

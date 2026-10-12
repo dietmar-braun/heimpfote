@@ -1,0 +1,85 @@
+@page "/admin/organisationen/{Id:guid}"
+@attribute [Authorize(Policy = "Admin")]
+@inject AppDbContext Db
+
+<PageTitle>@(org?.Name ?? "Organisation") – Verwaltung</PageTitle>
+<AdminNav />
+
+@if (org is null || Model is null)
+{
+    <h1>Organisation nicht gefunden</h1>
+    <p><a href="/admin/organisationen">Zur Liste</a></p>
+}
+else
+{
+    <h1>@org.Name</h1>
+    <p class="muted">
+        Tiere: @animalCount (vermittelbar: @availableCount) ·
+        <a href="/admin/tiere?org=@org.Id">Tiere ansehen</a>
+    </p>
+
+    @if (saved)
+    {
+        <p class="notice good">Gespeichert.</p>
+    }
+
+    <EditForm Model="Model" method="post" OnValidSubmit="Save" FormName="org-edit" class="form">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <OrganisationFields Model="Model" />
+        <button type="submit">Speichern</button>
+    </EditForm>
+
+    <h2>API-Key</h2>
+    @if (newKey is not null)
+    {
+        <p class="notice good">Neuer Key (wird nur jetzt angezeigt, bitte sicher speichern):<br /><code>@newKey</code></p>
+    }
+    <p class="muted">
+        @(org.ApiKeyHash is null
+            ? "Es ist noch kein Key vergeben."
+            : "Ein Key ist aktiv. Aus Sicherheitsgründen wird er nicht gespeichert und kann nicht erneut angezeigt werden.")
+    </p>
+    <form method="post" @onsubmit="RegenerateKey" @formname="org-key">
+        <AntiforgeryToken />
+        <button type="submit">@(org.ApiKeyHash is null ? "Key erzeugen" : "Neuen Key erzeugen")</button>
+    </form>
+    <p class="muted">Ein neuer Key macht den bisherigen sofort ungültig.</p>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    [SupplyParameterFromForm(FormName = "org-edit")] private OrganisationFormModel? Model { get; set; }
+
+    private Organization? org;
+    private int animalCount;
+    private int availableCount;
+    private bool saved;
+    private string? newKey;
+
+    protected override async Task OnInitializedAsync()
+    {
+        org = await Db.Organizations.FirstOrDefaultAsync(o => o.Id == Id);
+        if (org is null) return;
+
+        Model ??= OrganisationFormModel.From(org);
+
+        animalCount = await Db.Animals.CountAsync(a => a.OrganizationId == Id);
+        availableCount = await Db.Animals.CountAsync(a => a.OrganizationId == Id && a.Status == AnimalStatus.Vermittelbar);
+    }
+
+    private async Task Save()
+    {
+        Model!.ApplyTo(org!);
+        await Db.SaveChangesAsync();
+        saved = true;
+    }
+
+    private async Task RegenerateKey()
+    {
+        newKey = ApiKeys.Generate();
+        org!.ApiKeyHash = ApiKeys.Hash(newKey);
+        await Db.SaveChangesAsync();
+    }
+}
