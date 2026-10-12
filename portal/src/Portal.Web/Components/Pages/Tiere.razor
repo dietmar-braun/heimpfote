@@ -1,0 +1,140 @@
+@page "/tiere"
+@inject AppDbContext Db
+
+<PageTitle>Tiere suchen – Tierschutz Collect</PageTitle>
+<HeadContent>
+    <meta name="description" content="Vermittelbare Tiere aus Tierheimen und Tierschutzorganisationen durchsuchen." />
+</HeadContent>
+
+<h1>Tiere suchen</h1>
+
+<form method="get" class="filters">
+    <label>
+        Tierart
+        <select name="art">
+            <option value="">Alle</option>
+            @foreach (var s in Enum.GetValues<Species>())
+            {
+                <option value="@s" selected="@(Art == s.ToString())">@s</option>
+            }
+        </select>
+    </label>
+    <label>
+        Name
+        <input type="search" name="q" value="@Q" maxlength="100" />
+    </label>
+    <button type="submit">Suchen</button>
+</form>
+
+<p class="count">@Total @(Total == 1 ? "Tier" : "Tiere") gefunden</p>
+
+@if (items.Count == 0)
+{
+    <p>Keine Tiere gefunden. Versuche es mit anderen Filtern.</p>
+}
+else
+{
+    <div class="grid">
+        @foreach (var a in items)
+        {
+            <a class="card" href="/tiere/@a.Slug">
+                <div class="card-img">
+                    @if (a.ImageUrl is not null)
+                    {
+                        <img src="@a.ImageUrl" alt="@a.Name" loading="lazy" referrerpolicy="no-referrer" />
+                    }
+                    else
+                    {
+                        <span class="placeholder">@AnimalDisplay.SpeciesEmoji(a.Species)</span>
+                    }
+                    @if (a.IsUrgent)
+                    {
+                        <span class="badge">Dringend</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <h2>@a.Name</h2>
+                    <p>@a.Species@(a.Breed is null ? "" : " · " + a.Breed) · @AnimalDisplay.AgeText(a.BirthDate, a.ApproxAgeMonths)</p>
+                    <p class="muted">@a.OrganizationName@(string.IsNullOrWhiteSpace(a.City) ? "" : ", " + a.City)</p>
+                </div>
+            </a>
+        }
+    </div>
+
+    @if (PageCount > 1)
+    {
+        <nav class="paging" aria-label="Seiten">
+            @if (Seite > 1)
+            {
+                <a href="@PageUrl(Seite - 1)">← Zurück</a>
+            }
+            <span>Seite @Seite von @PageCount</span>
+            @if (Seite < PageCount)
+            {
+                <a href="@PageUrl(Seite + 1)">Weiter →</a>
+            }
+        </nav>
+    }
+}
+
+@code {
+    private const int PageSize = 12;
+
+    [SupplyParameterFromQuery(Name = "art")] public string? Art { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "seite")] public int Seite { get; set; } = 1;
+
+    private List<Item> items = [];
+    private int Total;
+    private int PageCount = 1;
+
+    private sealed record Item(
+        string Slug, string Name, Species Species, string? Breed,
+        int? ApproxAgeMonths, DateOnly? BirthDate, bool IsUrgent,
+        string OrganizationName, string? City, string? ImageUrl);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Sanitize user input
+        Species? species = Enum.TryParse<Species>(Art, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : null;
+        Art = species?.ToString();
+        Q = string.IsNullOrWhiteSpace(Q) ? null : Q.Trim()[..Math.Min(Q.Trim().Length, 100)];
+
+        var query = Db.Animals.AsNoTracking().Where(a => a.Status == AnimalStatus.Vermittelbar);
+
+        if (species is { } sp)
+            query = query.Where(a => a.Species == sp);
+
+        if (Q is not null)
+        {
+            var term = Q.ToLower();
+            query = query.Where(a => a.Name.ToLower().Contains(term));
+        }
+
+        Total = await query.CountAsync();
+        PageCount = Math.Max(1, (int)Math.Ceiling(Total / (double)PageSize));
+        Seite = Math.Clamp(Seite, 1, PageCount);
+
+        items = await query
+            .OrderByDescending(a => a.IsUrgent)
+            .ThenByDescending(a => a.FirstSeenAt)
+            .Skip((Seite - 1) * PageSize)
+            .Take(PageSize)
+            .Select(a => new Item(
+                a.Slug, a.Name, a.Species,
+                a.Breed != null ? a.Breed.Name : null,
+                a.ApproxAgeMonths, a.BirthDate, a.IsUrgent,
+                a.Organization.Name, a.Organization.City,
+                a.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).FirstOrDefault()))
+            .ToListAsync();
+    }
+
+    private string PageUrl(int page)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(Art)) parts.Add($"art={Uri.EscapeDataString(Art)}");
+        if (!string.IsNullOrEmpty(Q)) parts.Add($"q={Uri.EscapeDataString(Q)}");
+        if (page > 1) parts.Add($"seite={page}");
+        return "/tiere" + (parts.Count > 0 ? "?" + string.Join("&", parts) : "");
+    }
+}

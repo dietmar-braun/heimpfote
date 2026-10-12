@@ -35,3 +35,12 @@ Die Tests laufen gegen eine SQLite-In-Memory-Datenbank (kein Docker nötig).
 Abgedeckt sind: API-Keys, Slugs, Import-Validierung, Import-Logik (anlegen, aktualisieren,
 archivieren, Reaktivieren, Bilder, Rassen), Datenbankmodell (Indizes, Cascade, Enum-Mapping)
 und der API-Key-Filter.
+
+## Blazor-Oberfläche (Schritt 3)
+Seiten in `portal/src/Portal.Web/Components/Pages`:
+- `/`            Startseite (`Home.razor`)
+- `/tiere`       Tierliste mit Filtern und Seitenwechsel (`Tiere.razor`)
+- `/tiere/{slug}` Detailseite eines Tiers (`TierDetail.razor`)
+
+Im Development-Modus legt die App beim ersten Start sechs Demo-Tiere an.
+Voraussetzung: Standardnamespace von `Portal.Web` ist `TierschutzCollect.Web`.

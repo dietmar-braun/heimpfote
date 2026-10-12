@@ -1,0 +1,125 @@
+@page "/tiere/{Slug}"
+@inject AppDbContext Db
+
+@if (animal is null)
+{
+    <PageTitle>Tier nicht gefunden – Tierschutz Collect</PageTitle>
+    <h1>Tier nicht gefunden</h1>
+    <p><a href="/tiere">Zurück zur Suche</a></p>
+}
+else
+{
+    <PageTitle>@animal.Name – @animal.Species aus @animal.Organization.Name</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@AnimalDisplay.Truncate(animal.Description, 150)" />
+        <meta property="og:title" content="@animal.Name – @animal.Species" />
+        <meta property="og:description" content="@AnimalDisplay.Truncate(animal.Description, 150)" />
+        @if (animal.Images.Count > 0)
+        {
+            <meta property="og:image" content="@animal.Images[0].Url" />
+        }
+    </HeadContent>
+
+    <p><a href="/tiere">← Alle Tiere</a></p>
+
+    @if (animal.Status != AnimalStatus.Vermittelbar)
+    {
+        <p class="notice">Dieses Tier ist aktuell nicht mehr als vermittelbar gelistet (Status: @animal.Status).</p>
+    }
+
+    <h1>@animal.Name @(animal.IsUrgent ? "· Dringend" : "")</h1>
+
+    <div class="detail">
+        <div class="gallery">
+            @if (animal.Images.Count == 0)
+            {
+                <div class="card-img big"><span class="placeholder">@AnimalDisplay.SpeciesEmoji(animal.Species)</span></div>
+            }
+            else
+            {
+                @foreach (var img in animal.Images)
+                {
+                    <img src="@img.Url" alt="@animal.Name" loading="lazy" referrerpolicy="no-referrer" />
+                }
+            }
+        </div>
+
+        <div>
+            <h2>Steckbrief</h2>
+            <dl class="facts">
+                <dt>Tierart</dt><dd>@animal.Species</dd>
+                <dt>Rasse</dt><dd>@(animal.Breed?.Name ?? (animal.IsMixedBreed ? "Mischling" : "Unbekannt"))</dd>
+                <dt>Alter</dt><dd>@AnimalDisplay.AgeText(animal.BirthDate, animal.ApproxAgeMonths)</dd>
+                <dt>Geschlecht</dt><dd>@AnimalDisplay.SexLabel(animal.Sex)</dd>
+                <dt>Größe</dt><dd>@AnimalDisplay.SizeLabel(animal.Size)</dd>
+                @if (animal.WeightKg is { } weight)
+                {
+                    <dt>Gewicht</dt><dd>@weight kg</dd>
+                }
+                <dt>Kastriert</dt><dd>@AnimalDisplay.YesNo(animal.IsNeutered)</dd>
+                @if (animal.AdoptionFee is { } fee)
+                {
+                    <dt>Schutzgebühr</dt><dd>@AnimalDisplay.Money(fee)</dd>
+                }
+            </dl>
+
+            <h2>Verträglichkeit</h2>
+            <dl class="facts">
+                <dt>Mit Kindern</dt><dd>@animal.GoodWithChildren</dd>
+                <dt>Mit Hunden</dt><dd>@animal.GoodWithDogs</dd>
+                <dt>Mit Katzen</dt><dd>@animal.GoodWithCats</dd>
+                <dt>Für Wohnung</dt><dd>@animal.SuitableForApartment</dd>
+            </dl>
+
+            @if (animal.NeedsExperiencedOwner || animal.HasSpecialNeeds)
+            {
+                <p class="notice">
+                    @if (animal.NeedsExperiencedOwner) { <span>Erfahrene Halter gesucht. </span> }
+                    @if (animal.HasSpecialNeeds) { <span>Besondere Bedürfnisse.</span> }
+                </p>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(animal.Description))
+    {
+        <h2>Beschreibung</h2>
+        <p class="desc">@animal.Description</p>
+    }
+
+    <h2>Vermittelt von</h2>
+    <div class="org">
+        <strong>@animal.Organization.Name</strong>
+        @if (!string.IsNullOrWhiteSpace(animal.Organization.City))
+        {
+            <div>@animal.Organization.PostalCode @animal.Organization.City</div>
+        }
+        @if (AnimalDisplay.SafeHttpUrl(animal.Organization.WebsiteUrl) is { } website)
+        {
+            <div><a href="@website" rel="noopener nofollow" target="_blank">Website des Tierheims</a></div>
+        }
+        @if (AnimalDisplay.SafeHttpUrl(animal.SourceUrl) is { } source)
+        {
+            <div><a href="@source" rel="noopener nofollow" target="_blank">Zum Original-Inserat</a></div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [CascadingParameter] private HttpContext? Http { get; set; }
+
+    private Animal? animal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        animal = await Db.Animals.AsNoTracking()
+            .Include(a => a.Images.OrderBy(i => i.SortOrder))
+            .Include(a => a.Breed)
+            .Include(a => a.Organization)
+            .FirstOrDefaultAsync(a => a.Slug == Slug);
+
+        if (animal is null && Http is not null)
+            Http.Response.StatusCode = StatusCodes.Status404NotFound;
+    }
+}

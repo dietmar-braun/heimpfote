@@ -5,6 +5,7 @@ using TierschutzCollect.Infrastructure;
 using TierschutzCollect.Infrastructure.Import;
 using TierschutzCollect.Infrastructure.Services;
 using TierschutzCollect.Web;
+using TierschutzCollect.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,9 @@ builder.Services.AddScoped<ImportService>();
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
+
+// Blazor: static server-side rendering (ready-made HTML, good for SEO)
+builder.Services.AddRazorComponents();
 
 var app = builder.Build();
 
@@ -42,7 +46,18 @@ if (app.Environment.IsDevelopment())
         await db.SaveChangesAsync();
         app.Logger.LogWarning("Demo-API-Key (nur jetzt sichtbar): {Key}", key);
     }
+
+    // Demo animals so the site is not empty
+    if (!await db.Animals.AnyAsync())
+    {
+        var org = await db.Organizations.FirstAsync();
+        var import = scope.ServiceProvider.GetRequiredService<ImportService>();
+        await DevSeed.SeedAnimalsAsync(import, org);
+    }
 }
+
+app.UseStaticFiles();
+app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
@@ -58,5 +73,7 @@ api.MapPost("/import/animals", async (
     var result = await import.ImportAsync(org, req, ct);
     return Results.Ok(result);
 });
+
+app.MapRazorComponents<App>();
 
 app.Run();
