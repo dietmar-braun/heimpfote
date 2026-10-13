@@ -10,6 +10,7 @@ Portal, das Tiere aus vielen Tierheimen und Organisationen zusammenführt.
 
 ## Erster Start
 ```bash
+cp .env_sample .env                        # Windows: copy .env_sample .env
 docker compose up -d                       # PostgreSQL + PostGIS
 
 cd portal                                  # hier liegt TierschutzCollect.slnx (in Visual Studio öffnen)
@@ -19,6 +20,8 @@ dotnet ef migrations add Initial -p src/Portal.Infrastructure -s src/Portal.Web
 
 dotnet run --project src/Portal.Web
 ```
+Der Datenbank-Port steht in `.env` (`POSTGRES_PORT`, Vorlage: `.env_sample`). Docker Compose liest nur `.env`, nicht `.env_sample`. Derselbe Port muss in `portal/src/Portal.Web/appsettings.Development.json` unter `ConnectionStrings:Default` bei `Port=` stehen. Nach einer Änderung `docker compose up -d` erneut ausführen.
+
 Beim ersten Start im Development-Modus wird die Datenbank migriert und eine
 Demo-Organisation angelegt. Der API-Key steht **einmalig** im Konsolen-Log.
 Danach `docs/beispiel-import.http` ausführen (Web läuft auf http://localhost:5080).
