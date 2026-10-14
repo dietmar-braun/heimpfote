@@ -20,6 +20,8 @@ dotnet ef migrations add Initial -p src/Portal.Infrastructure -s src/Portal.Web
 
 dotnet run --project src/Portal.Web
 ```
+Die Tabellen entstehen durch Migrationen (Entity Framework Core). Die erste Migration muss einmal erzeugt werden: oben per `dotnet ef migrations add Initial …` oder in Visual Studio in der Paket-Manager-Konsole mit `Add-Migration Initial -Project Portal.Infrastructure -StartupProject Portal.Web`. Der Ordner `portal/src/Portal.Infrastructure/Migrations` gehört ins Repository. Ohne Migration startet die App mit einem Hinweis und legt keine Tabellen an. Beim Start im Development-Modus werden Migrationen automatisch angewendet. Nach jeder Änderung am Datenmodell eine neue Migration anlegen.
+
 Der Datenbank-Port steht in `.env` (`POSTGRES_PORT`, Vorlage: `.env_sample`). Docker Compose liest nur `.env`, nicht `.env_sample`. Derselbe Port muss in `portal/src/Portal.Web/appsettings.Development.json` unter `ConnectionStrings:Default` bei `Port=` stehen. Nach einer Änderung `docker compose up -d` erneut ausführen.
 
 Beim ersten Start im Development-Modus wird die Datenbank migriert und eine
@@ -53,15 +55,13 @@ Voraussetzung: Standardnamespace von `Portal.Web` ist `TierschutzCollect.Web`.
   (`admin@localhost.test` / `Admin!12345`). **Nur lokal!**
 - Produktion: `Admin__Email` und `Admin__Password` als Umgebungsvariablen oder User-Secrets setzen,
   nie im Repository. Ein vorhandener Benutzer wird nicht überschrieben.
-- Das Datenmodell enthält jetzt die Identity-Tabellen. Neue Migration nötig:
-  `dotnet ef migrations add AddIdentity -p src/Portal.Infrastructure -s src/Portal.Web`
-  (bei einer ganz frischen Datenbank reicht `Initial`).
+- Die Identity-Tabellen sind Teil des Datenmodells und kommen mit der ersten Migration (`Initial`, siehe „Erster Start“).
 
 ## Suche
 - `/tiere` filtert nach Tierart, Geschlecht, Größe, Altersgruppe, Kastriert, Verträglichkeit (Kinder, Hunde, Katzen, Wohnung), Dringend und Freitext. Sortierung: empfohlen, neueste, Name.
 - Der Freitext nutzt auf PostgreSQL die deutsche Volltextsuche (GIN-Index) plus Teilwort-Treffer bei Name und Rasse. In den Tests (SQLite) läuft eine einfache Teilstring-Suche.
 - Alle Filter stehen in der URL und lassen sich teilen, zum Beispiel `/tiere?art=Hund&groesse=gross&kinder=1`.
-- Neue Migration nötig (Volltextindex): `dotnet ef migrations add AddFullTextSearch -p src/Portal.Infrastructure -s src/Portal.Web` (bei einer frischen Datenbank reicht `Initial`).
+- Der Volltextindex ist ebenfalls Teil der ersten Migration (`Initial`). Spätere Modelländerungen brauchen jeweils eine neue Migration.
 
 ## SEO
 - `/sitemap.xml` (alle vermittelbaren Tiere) und `/robots.txt` (sperrt `/admin`, `/login`, `/api`) werden automatisch erzeugt.

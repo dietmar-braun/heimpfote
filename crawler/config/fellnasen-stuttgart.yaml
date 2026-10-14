@@ -1,0 +1,50 @@
+# Example configuration for one shelter website.
+# Copy this file, adjust the selectors (browser dev tools: right click -> inspect) and test with:
+#   tsc-crawler run config/mein-tierheim.yaml --dry-run
+#
+# The API key is NOT stored here. Create the organization in the admin area, then export it:
+#   export TSC_API_KEY=tsc_...      (the variable name is configurable via api_key_env)
+
+name: Beispiel Tierheim
+start_urls:
+  - https://fellnasen-stuttgart.de/tiere/hunde/
+  - https://fellnasen-stuttgart.de/tiere/katzen/
+
+# One element per animal on the list page.
+item_selector: "article.tier"
+
+# Optional: if the list only shows teasers, follow this link and read the fields from the detail page.
+detail_link_selector: "a.mehr"
+
+# Optional pagination.
+next_page_selector: "a.next"
+max_pages: 20
+delay_seconds: 2
+respect_robots: true
+
+# Used when the page has no species field. Remove if the list mixes species.
+# default_species: Hund
+
+# Safety net: do not archive missing animals if fewer than N animals were found.
+min_animals: 3
+
+fields:
+  name: "h1"
+  external_id:                       # optional, default = last part of the detail URL
+    selector: ".tier-nr"
+    regex: "Nr\\.?\\s*(\\d+)"
+  species: ".art"
+  breed: ".rasse"
+  sex: ".geschlecht"
+  age: ".alter"
+  size: ".groesse"
+  weight: ".gewicht"
+  fee: ".schutzgebuehr"
+  neutered: ".kastriert"
+  children: ".kinder"
+  dogs: ".hunde"
+  cats: ".katzen"
+  description: ".beschreibung"
+  images:
+    selector: ".galerie img"
+    attr: "src"

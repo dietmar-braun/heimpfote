@@ -62,6 +62,17 @@ if (app.Environment.IsDevelopment())
 
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    // Without a migration, MigrateAsync() silently does nothing and the first query fails with
+    // "relation ... does not exist". Fail early with a clear hint instead.
+    if (!db.Database.GetMigrations().Any())
+    {
+        throw new InvalidOperationException(
+            "No EF Core migrations found. Create the initial migration first: " +
+            "dotnet ef migrations add Initial -p src/Portal.Infrastructure -s src/Portal.Web " +
+            "(Visual Studio: Add-Migration Initial -Project Portal.Infrastructure -StartupProject Portal.Web).");
+    }
+
     await db.Database.MigrateAsync();
 
     // Demo organization incl. API key, which is only logged once
