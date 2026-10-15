@@ -28,6 +28,9 @@ def _raw_values(scope: Tag, spec: FieldSpec) -> list[str]:
         elements = elements[:1]
     values: list[str] = []
     for el in elements:
+        for _ in range(spec.up):
+            if el.parent is not None:
+                el = el.parent
         if spec.attr:
             value = el.get(spec.attr)
             if isinstance(value, list):

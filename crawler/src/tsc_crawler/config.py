@@ -14,6 +14,7 @@ class FieldSpec:
     attr: str | None = None       # None = element text
     regex: str | None = None      # first capture group (or whole match) is used
     multiple: bool = False        # collect all matches (e.g. images)
+    up: int = 0                   # climb N parents from the matched element (label/value pairs)
     static: str | None = None     # constant value instead of a selector
 
 

@@ -16,6 +16,9 @@ pip install -e ".[dev]"
 
 ## Benutzung
 ```bash
+# 0) Konfiguration automatisch vorschlagen lassen (siehe Abschnitt „Neue Seite anbinden“)
+tsc-crawler suggest https://www.beispiel-tierheim.de --out config/beispiel-tierheim.yaml
+
 # 1) CMS der Seite herausfinden (WordPress, TYPO3, Joomla ... -> evtl. Plugin statt Crawler)
 tsc-crawler detect https://www.beispiel-tierheim.de
 
@@ -30,6 +33,18 @@ tsc-crawler run config/mein-tierheim.yaml --api-url http://localhost:5080
 tsc-crawler run-all config/sites
 ```
 `--limit 5` bricht nach 5 Tieren ab (praktisch zum Ausprobieren; es wird dann kein Snapshot gesendet).
+
+## Neue Seite anbinden (halbautomatisch)
+`tsc-crawler suggest <startseite>` erstellt einen YAML-Entwurf:
+1. sucht auf der Startseite (und in der `sitemap.xml`) nach der Seite mit den Tieren,
+2. erkennt die wiederkehrenden Tier-Karten, die Detailseiten und das Weiterblättern,
+3. liest eine Detailseite und ordnet Beschriftungen wie „Alter“, „Rasse“, „Katzen“ den Feldern zu,
+4. macht einen kleinen Testlauf und zeigt, welche Felder gefüllt wurden.
+
+Das ist ein **Entwurf**: Immer mit `--dry-run` prüfen und Auffälliges von Hand korrigieren (Hinweise stehen als
+Kommentare am Anfang der Datei). Findet er die Liste nicht, hilft `--list-url https://.../tiere/`.
+Bei Seiten mit gemischten Tierarten ggf. `default_species` entfernen. Seiten, die ihre Tiere erst per
+JavaScript nachladen, kann der Crawler nicht lesen (dort besser Plugin/Feed).
 
 ## Verhalten, das man kennen sollte
 - **Höflich**: beachtet `robots.txt`, wartet pro Host `delay_seconds` zwischen Anfragen, wiederholt bei 429/5xx.

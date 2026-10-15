@@ -60,6 +60,13 @@ class HttpFetcher:
         return parser is None or parser.can_fetch(USER_AGENT, url)
 
     def get(self, url: str) -> str | None:
+        return self._get(url, require_html=True)
+
+    def get_raw(self, url: str) -> str | None:
+        """Like get(), but accepts any content type (e.g. sitemap.xml)."""
+        return self._get(url, require_html=False)
+
+    def _get(self, url: str, require_html: bool) -> str | None:
         if not self.allowed(url):
             log.warning("Blocked by robots.txt: %s", url)
             return None
@@ -74,7 +81,7 @@ class HttpFetcher:
         except requests.RequestException as exc:
             log.error("Fetch failed for %s: %s", url, exc)
             return None
-        if "html" not in resp.headers.get("Content-Type", "html").lower():
+        if require_html and "html" not in resp.headers.get("Content-Type", "html").lower():
             log.warning("Skipping non-HTML response: %s", url)
             return None
         resp.encoding = resp.encoding or resp.apparent_encoding
